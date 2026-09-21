@@ -1,4 +1,4 @@
-from prompt import SYSTEM_PROMPT
+from reasoning.prompt import SYSTEM_PROMPT
 from dotenv import load_dotenv
 import os
 from openai import OpenAI

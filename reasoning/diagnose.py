@@ -1,28 +1,10 @@
-from prompt import build_prompt
-from llm import generate_diagnosis
-from quote_checker import check_quote
-
-
-# TEMPORARY MOCK
-# Replace this with Segment 2's retrieve() later.
-def retrieve(query, k=3, brand=None):
-    return [
-        {
-            "document_id": "DEMO-001",
-            "brand": "Daikin",
-            "code": "E7",
-            "fault": "Outdoor fan malfunction",
-            "severity": "High",
-            "cost_min": 1500,
-            "cost_max": 3500,
-            "cost_confidence": "sourced"
-        }
-    ]
+from reasoning.prompt import build_prompt
+from reasoning.llm import generate_diagnosis
+from reasoning.quote_checker import check_quote
+from retriever import retrieve
 
 
 def diagnose(query, quote=None, brand=None, k=3):
-
-    # 1. Retrieve relevant KB rows
     rows = retrieve(
         query=query,
         k=k,
@@ -34,22 +16,40 @@ def diagnose(query, quote=None, brand=None, k=3):
             "error": "No relevant knowledge-base evidence found."
         }
 
-    # 2. Build grounded prompt
+    normalized_rows = []
+
+    for row in rows:
+        normalized_rows.append({
+            "document_id": row.get("document_id"),
+            "brand": row.get("brand"),
+            "code": row.get("code"),
+            "fault": row.get("fault_description"),
+            "fault_description": row.get("fault_description"),
+            "severity": row.get("severity"),
+            "fault_type": row.get("fault_type"),
+            "component_category": row.get("component_category"),
+            "difficulty": row.get("difficulty"),
+            "cost_min": row.get("cost_min"),
+            "cost_max": row.get("cost_max"),
+            "cost_confidence": row.get("cost_confidence"),
+            "match_type": row.get("match_type"),
+            "similarity_score": row.get("similarity_score"),
+            "distance": row.get("distance"),
+            "document": row.get("document")
+        })
+
     prompt = build_prompt(
         query=query,
-        retrieved_rows=rows
+        retrieved_rows=normalized_rows
     )
 
-    # 3. Ask LLM
     diagnosis = generate_diagnosis(prompt)
 
-    # 4. Get cost information from top retrieved row
-    top_row = rows[0]
+    top_row = normalized_rows[0]
 
     cost_min = top_row.get("cost_min")
     cost_max = top_row.get("cost_max")
 
-    # 5. Check technician quote
     diagnosis = check_quote(
         diagnosis,
         quote,
@@ -61,9 +61,7 @@ def diagnose(query, quote=None, brand=None, k=3):
 
 
 if __name__ == "__main__":
-
     result = diagnose(
         "My Daikin AC is showing E7"
     )
-
     print(result)
