@@ -1,0 +1,5 @@
+# Dependencies for RepairCheck - Segment 2 (Retrieval Layer)
+pandas>=2.0.0
+openpyxl>=3.1.0
+chromadb>=0.4.22
+sentence-transformers>=2.2.2
